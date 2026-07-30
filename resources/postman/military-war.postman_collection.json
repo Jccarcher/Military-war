@@ -1,0 +1,1060 @@
+{
+  "info": {
+    "_postman_id": "b7f3a1c2-9d54-4e18-8a6b-2f0c5d3e7a91",
+    "name": "Military War Simulation API",
+    "description": "Colección completa de la API de simulación militar (Java 21 + Spring Boot 4, arquitectura hexagonal).\n\n## Uso rápido\n\n1. Levanta la aplicación: `mvn spring-boot:run` o `docker compose up --build`.\n2. Importa esta colección y, opcionalmente, el entorno `military-war.postman_environment.json`.\n3. Ejecuta la carpeta **1. Ejércitos → Crear ejército (chinos)** y **Crear ejército rival (ingleses)**: los scripts guardan `armyId` y `rivalArmyId` automáticamente, así que el resto de peticiones ya funcionan sin copiar ids a mano.\n\nTambién puedes ejecutar la colección entera con el Collection Runner: está ordenada para que el flujo funcione de principio a fin.\n\n## Variables\n\n| Variable | Valor por defecto | Descripción |\n| --- | --- | --- |\n| `host` | `http://localhost:8080` | Host de la aplicación |\n| `baseUrl` | `{{host}}/api/v1` | Prefijo de todos los endpoints |\n| `armyId` | (vacío) | Se rellena al crear el primer ejército |\n| `rivalArmyId` | (vacío) | Se rellena al crear el ejército rival |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Ejércitos",
+      "description": "Creación y consulta de ejércitos.",
+      "item": [
+        {
+          "name": "Crear ejército (chinos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Normaliza la civilización a china', function () {",
+                  "    pm.expect(body.civilization).to.eql('china');",
+                  "});",
+                  "",
+                  "pm.test('Empieza con 1000 de oro y 3 unidades', function () {",
+                  "    pm.expect(body.gold).to.eql(1000);",
+                  "    pm.expect(body.units).to.have.lengthOf(3);",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('armyId', body.id);",
+                  "console.log('armyId =', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"civilization\": \"chinos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies"
+              ]
+            },
+            "description": "Crea un ejército con 1000 de oro y sus unidades iniciales: Piquero (5), Arquero (8) y Caballero (12).\n\nEl campo `civilization` acepta el nombre en español o en inglés: `chinos`/`china`, `ingleses`/`english`, `bizantinos`/`byzantine`.\n\nGuarda el id en la variable `armyId`."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear ejército rival (ingleses)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Normaliza la civilización a english', function () {",
+                  "    pm.expect(body.civilization).to.eql('english');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('rivalArmyId', body.id);",
+                  "console.log('rivalArmyId =', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"civilization\": \"ingleses\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies"
+              ]
+            },
+            "description": "Crea el segundo ejército, necesario para la simulación de batalla. Guarda el id en `rivalArmyId`."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear ejército (bizantinos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Normaliza la civilización a byzantine', function () {",
+                  "    pm.expect(pm.response.json().civilization).to.eql('byzantine');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"civilization\": \"bizantinos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies"
+              ]
+            },
+            "description": "Tercera civilización soportada. No sobrescribe `armyId` ni `rivalArmyId`."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar ejército",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Devuelve el ejército solicitado', function () {",
+                  "    pm.expect(body.id).to.eql(pm.collectionVariables.get('armyId'));",
+                  "});",
+                  "",
+                  "pm.test('Incluye oro, unidades e historial', function () {",
+                  "    pm.expect(body).to.have.property('gold');",
+                  "    pm.expect(body.units).to.be.an('array');",
+                  "    pm.expect(body.battleHistory).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}"
+              ]
+            },
+            "description": "Devuelve el estado actual del ejército: oro, unidades con sus puntos y contador de entrenamientos, e historial de batallas."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Entrenamiento",
+      "description": "Entrenar suma 5 puntos a la unidad y descuenta oro: Piquero 30, Arquero 40, Caballero 50.",
+      "item": [
+        {
+          "name": "Entrenar Piquero (30 de oro)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const piquero = pm.response.json().units.find(function (unit) {",
+                  "    return unit.type === 'Piquero';",
+                  "});",
+                  "",
+                  "pm.test('El Piquero sube 5 puntos y cuenta el entrenamiento', function () {",
+                  "    pm.expect(piquero.points).to.be.at.least(10);",
+                  "    pm.expect(piquero.trainingCount).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitType\": \"Piquero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/train",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "train"
+              ]
+            },
+            "description": "Entrena el Piquero: +5 puntos, +1 entrenamiento, -30 de oro.\n\nEl id del ejército se toma de la ruta; si envías `armyId` en el cuerpo, se ignora."
+          },
+          "response": []
+        },
+        {
+          "name": "Entrenar Arquero (40 de oro)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitType\": \"Arquero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/train",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "train"
+              ]
+            },
+            "description": "Entrena el Arquero: +5 puntos, -40 de oro."
+          },
+          "response": []
+        },
+        {
+          "name": "Entrenar Caballero (50 de oro)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitType\": \"Caballero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/train",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "train"
+              ]
+            },
+            "description": "Entrena el Caballero: +5 puntos, -50 de oro."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Transformación",
+      "description": "La transformación cuesta 30 de oro y solo admite el ciclo Piquero → Arquero → Caballero → Piquero.",
+      "item": [
+        {
+          "name": "Piquero → Arquero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('El ejército ya tiene un Arquero', function () {",
+                  "    const tipos = pm.response.json().units.map(function (unit) { return unit.type; });",
+                  "    pm.expect(tipos).to.include('Arquero');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceType\": \"Piquero\",\n  \"targetType\": \"Arquero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/transform",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "transform"
+              ]
+            },
+            "description": "La unidad resultante conserva el mayor valor entre sus puntos actuales y los puntos base del tipo destino. El contador de entrenamientos se reinicia."
+          },
+          "response": []
+        },
+        {
+          "name": "Arquero → Caballero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceType\": \"Arquero\",\n  \"targetType\": \"Caballero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/transform",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "transform"
+              ]
+            },
+            "description": "Segundo paso del ciclo de transformación."
+          },
+          "response": []
+        },
+        {
+          "name": "Caballero → Piquero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceType\": \"Caballero\",\n  \"targetType\": \"Piquero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/transform",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "transform"
+              ]
+            },
+            "description": "Cierra el ciclo de transformación."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Batalla",
+      "description": "Compara los puntos totales de dos ejércitos. El ganador recibe 100 de oro; el perdedor pierde su unidad más débil y 50 de oro. En empate, ambos pierden su unidad más débil.",
+      "item": [
+        {
+          "name": "Simular batalla",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('El resultado es victory, defeat o draw', function () {",
+                  "    pm.expect(body.result).to.be.oneOf(['victory', 'defeat', 'draw']);",
+                  "});",
+                  "",
+                  "pm.test('En empate no hay ganador ni perdedor', function () {",
+                  "    if (body.result === 'draw') {",
+                  "        pm.expect(body.winnerId).to.be.null;",
+                  "        pm.expect(body.loserId).to.be.null;",
+                  "    } else {",
+                  "        pm.expect(body.winnerId).to.be.a('string');",
+                  "        pm.expect(body.loserId).to.be.a('string');",
+                  "    }",
+                  "});",
+                  "",
+                  "console.log('Resultado:', body.result);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstArmyId\": \"{{armyId}}\",\n  \"secondArmyId\": \"{{rivalArmyId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/battle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "battle"
+              ]
+            },
+            "description": "El campo `result` siempre se expresa desde la perspectiva de `firstArmyId`.\n\nRequiere haber creado ambos ejércitos (carpeta 1) para que `armyId` y `rivalArmyId` estén definidos."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar historial tras la batalla",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('La batalla quedó registrada en el historial', function () {",
+                  "    pm.expect(pm.response.json().battleHistory).to.have.lengthOf.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}"
+              ]
+            },
+            "description": "Comprueba el oro resultante, las unidades que sobrevivieron y la entrada añadida a `battleHistory`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Casos de error (400)",
+      "description": "Todos los errores de negocio y de validación devuelven 400 con el cuerpo {\"message\": \"...\"}.",
+      "item": [
+        {
+          "name": "Civilización no soportada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Explica el motivo', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('Civilización no soportada');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"civilization\": \"romanos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies"
+              ]
+            },
+            "description": "Solo se admiten chinos, ingleses y bizantinos."
+          },
+          "response": []
+        },
+        {
+          "name": "Civilización ausente (validación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Lo rechaza Bean Validation', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('La civilización es obligatoria');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies"
+              ]
+            },
+            "description": "El campo obligatorio se valida en el adaptador REST antes de llegar al dominio."
+          },
+          "response": []
+        },
+        {
+          "name": "Tipo de unidad ausente (validación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 y no 500', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Indica el campo obligatorio', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('El tipo de unidad es obligatorio');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/train",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "train"
+              ]
+            },
+            "description": "Cuerpo vacío en el entrenamiento."
+          },
+          "response": []
+        },
+        {
+          "name": "Unidad inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Informa que la unidad no existe', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('Unidad no encontrada');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unitType\": \"Mago\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/train",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "train"
+              ]
+            },
+            "description": "Solo existen Piquero, Arquero y Caballero."
+          },
+          "response": []
+        },
+        {
+          "name": "Transformación no soportada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Informa que la regla no existe', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('Regla de transformación no soportada');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceType\": \"Piquero\",\n  \"targetType\": \"Caballero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/armies/{{armyId}}/transform",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "{{armyId}}",
+                "transform"
+              ]
+            },
+            "description": "El ciclo permitido es Piquero → Arquero → Caballero → Piquero; cualquier otro salto se rechaza."
+          },
+          "response": []
+        },
+        {
+          "name": "Ejército no encontrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Informa que el ejército no existe', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('Ejército no encontrado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/armies/00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "armies",
+                "00000000-0000-0000-0000-000000000000"
+              ]
+            },
+            "description": "Id inexistente. El estado vive en memoria, así que también ocurre tras reiniciar la aplicación."
+          },
+          "response": []
+        },
+        {
+          "name": "Cuerpo JSON malformado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400 Bad Request', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Informa que el cuerpo es inválido', function () {",
+                  "    pm.expect(pm.response.json().message).to.eql('El cuerpo de la solicitud es inválido');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/battle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "battle"
+              ]
+            },
+            "description": "JSON sin cerrar: lo captura el manejador de HttpMessageNotReadableException."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Documentación",
+      "description": "Recursos de OpenAPI expuestos por springdoc. No cuelgan de /api/v1.",
+      "item": [
+        {
+          "name": "OpenAPI JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Es un documento OpenAPI', function () {",
+                  "    pm.expect(pm.response.json()).to.have.property('openapi');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/v3/api-docs",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "v3",
+                "api-docs"
+              ]
+            },
+            "description": "Especificación OpenAPI generada por springdoc. Puedes importarla en Postman para regenerar esta colección."
+          },
+          "response": []
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/swagger-ui/index.html",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "swagger-ui",
+                "index.html"
+              ]
+            },
+            "description": "Interfaz web de Swagger. Ábrela en el navegador; desde Postman solo verás el HTML."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "host",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{host}}/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "armyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rivalArmyId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

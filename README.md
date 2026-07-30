@@ -29,8 +29,11 @@ El sistema funciona sin base de datos y guarda los estados de los ejércitos en 
 | Backend           | Java 21                      | Lenguaje principal                     |
 | Framework         | Spring Boot 4.1.0            | Desarrollo de la API REST              |
 | Arquitectura      | Hexagonal (Ports & Adapters) | Separación entre dominio y adaptadores |
-| Logging           | Log4j2                       | Trazas de aplicación y dominio         |
-| Testing           | JUnit 5 / Spring Boot Test   | Pruebas unitarias y de integración     |
+| Validación        | Jakarta Bean Validation      | Validación de los DTO de entrada       |
+| Nulabilidad       | JSpecify                     | Contratos `@Nullable` / `@NonNull`     |
+| Logging           | SLF4J sobre Log4j2           | Trazas de aplicación y dominio         |
+| Testing           | JUnit 5 / Mockito / MockMvc  | Pruebas unitarias, de slice web y de integración |
+| Cobertura         | JaCoCo 0.8.13                | Informe HTML de cobertura por clase    |
 | Documentación API | springdoc-openapi 2.8.0      | Swagger UI / OpenAPI                   |
 | Build             | Maven + Maven Wrapper        | Compilación y empaquetado              |
 | Contenerización   | Docker / Docker Compose      | Despliegue local reproducible          |
@@ -379,7 +382,9 @@ El campo `result` toma los valores `victory`, `defeat` o `draw`, siempre desde l
 
 ## ⚠️ Manejo de Errores
 
-Los errores de negocio se traducen a `400 Bad Request` mediante `GlobalExceptionHandler`, con el siguiente formato:
+Todos los errores de entrada y de negocio se traducen a `400 Bad Request` mediante
+[GlobalExceptionHandler](src/main/java/com/kala/military/adapters/in/rest/GlobalExceptionHandler.java),
+con el siguiente formato:
 
 ```json
 {
@@ -387,30 +392,86 @@ Los errores de negocio se traducen a `400 Bad Request` mediante `GlobalException
 }
 ```
 
-Mensajes posibles: `Ejército no encontrado`, `Unidad no encontrada`, `Oro insuficiente`, `Civilización no soportada`, `La civilización es obligatoria`, `Regla de transformación no soportada`.
+| Origen | Ejemplos de mensaje |
+| :----- | :------------------ |
+| Reglas de negocio | `Ejército no encontrado`, `Unidad no encontrada`, `Oro insuficiente`, `Civilización no soportada`, `Regla de transformación no soportada` |
+| Validación del payload | `La civilización es obligatoria`, `El tipo de unidad es obligatorio`, `El tipo de unidad de origen es obligatorio`, `El tipo de unidad de destino es obligatorio` |
+| JSON malformado | `El cuerpo de la solicitud es inválido` |
+
+La validación ocurre en dos capas a propósito: el adaptador REST valida el formato con Bean Validation
+y el dominio revalida sus propias invariantes, de modo que ningún campo ausente puede provocar un `500`.
+
+## 📮 Colección de Postman
+
+En [resources/postman/](resources/postman/) está la colección completa lista para importar:
+
+| Archivo | Contenido |
+| :------ | :-------- |
+| `military-war.postman_collection.json` | 21 peticiones agrupadas por caso de uso, con pruebas `pm.test` |
+| `military-war-local.postman_environment.json` | Variables `host`, `baseUrl`, `armyId`, `rivalArmyId` |
+
+En Postman: **Import → Files** y selecciona ambos archivos. Ejecuta primero *Crear ejército (chinos)*
+y *Crear ejército rival (ingleses)*: sus scripts guardan los ids en variables, así que el resto de
+peticiones funcionan sin copiar nada a mano. También puede ejecutarse entera con el Collection Runner
+o desde consola con Newman.
+
+Las carpetas cubren ejércitos, entrenamiento, transformación, batalla, los siete casos de error `400`
+y los recursos de OpenAPI. Ver [resources/postman/README.md](resources/postman/README.md) para el detalle.
 
 ## 🧪 Pruebas
 
-El proyecto incluye 13 pruebas repartidas en dominio, aplicación e integración REST:
+El proyecto incluye 66 pruebas repartidas en dominio, aplicación y adaptadores:
 
 | Clase                          | Nivel        |
 | :----------------------------- | :----------- |
 | `ArmyTest`, `UnitTest`         | Dominio      |
-| `ArmyServiceTest`, `BattleServiceTest` | Aplicación |
-| `ArmyControllerIntegrationTest` | Integración REST |
+| `ArmyServiceTest`, `BattleServiceTest` | Aplicación (con `FakeArmyRepository`) |
+| `ArmyControllerWebMvcTest`     | Contrato HTTP con `@WebMvcTest` + MockMvc |
+| `GlobalExceptionHandlerTest`   | Traducción de errores a HTTP 400 |
+| `InMemoryArmyRepositoryTest`   | Adaptador de persistencia |
+| `ArmyControllerIntegrationTest` | Cableado del hexágono |
 | `MilitaryApplicationTests`     | Contexto Spring |
 
 ```bash
 mvn test
 ```
 
+### 📊 Cobertura con JaCoCo
+
+El agente de JaCoCo se activa automáticamente durante las pruebas y el informe se genera en la misma
+ejecución:
+
+```bash
+mvn clean test
+```
+
+Luego abre el informe HTML, que permite navegar paquete → clase → línea:
+
+```text
+target/site/jacoco/index.html
+```
+
+```bash
+start target/site/jacoco/index.html    # Windows
+open target/site/jacoco/index.html     # macOS
+```
+
+También se generan `jacoco.xml` y `jacoco.csv` en esa misma carpeta, para integrarlos con SonarQube,
+Codecov o la herramienta de CI que se use. La carpeta `target/` está ignorada por Git.
+
+Cobertura actual: **99,3 % de instrucciones, 98,7 % de ramas y 99 % de líneas**. Lo único sin cubrir
+es intencional: el método `main` de `MilitaryApplication` y la rama `default` de `initializeUnits`,
+que es inalcanzable porque `normalizeCivilization` ya filtra las civilizaciones válidas, pero se
+conserva como red de seguridad si en el futuro se añade una civilización a un solo lugar.
+
 ## 🔎 Observaciones de Diseño
 
-- El estado del ejército se mantiene en memoria (`HashMap`) y se pierde al reiniciar el proceso.
-- El repositorio en memoria no es thread-safe; es suficiente para el alcance actual pero debe revisarse ante concurrencia real.
-- La capa de dominio no depende de Spring ni de HTTP, y los servicios de aplicación se instancian manualmente en `BeanConfiguration`.
-- Los errores de negocio se traducen a respuestas HTTP 400 mediante un manejador global.
+- El estado del ejército se mantiene en memoria (`ConcurrentHashMap`) y se pierde al reiniciar el proceso.
+- La capa de dominio no depende de Spring, Jakarta ni Jackson; los servicios de aplicación se instancian manualmente en `BeanConfiguration` y se publican con el tipo de su puerto.
+- `Army` expone sus unidades e historial como listas inmutables: su composición solo cambia a través de sus propias operaciones.
+- Los errores de negocio y de validación se traducen a respuestas HTTP 400 mediante un manejador global.
 - El proyecto está preparado para evolucionar hacia persistencia real o integración con otros servicios sustituyendo el adaptador de salida.
+- Las convenciones y las excepciones arquitectónicas para agentes de IA están en [CLAUDE.md](CLAUDE.md).
 
 ## 📚 Documentación Adicional
 

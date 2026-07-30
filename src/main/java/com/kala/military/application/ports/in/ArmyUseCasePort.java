@@ -5,13 +5,26 @@ import com.kala.military.application.dto.CreateArmyRequest;
 import com.kala.military.application.dto.TrainUnitRequest;
 import com.kala.military.application.dto.TransformUnitRequest;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+/**
+ * Inbound port exposing the army use cases.
+ *
+ * <p>Every operation throws {@link IllegalArgumentException} when a business rule is violated:
+ * unknown army or unit, unsupported civilization or transformation, or insufficient gold.
+ */
 public interface ArmyUseCasePort {
 
-    ArmyResponse createArmy(CreateArmyRequest request);
+    @NonNull
+    ArmyResponse createArmy(@NonNull CreateArmyRequest request);
 
-    ArmyResponse trainUnit(TrainUnitRequest request);
+    @NonNull
+    ArmyResponse trainUnit(@NonNull TrainUnitRequest request);
 
-    ArmyResponse transformUnit(TransformUnitRequest request);
+    @NonNull
+    ArmyResponse transformUnit(@NonNull TransformUnitRequest request);
 
-    ArmyResponse getArmy(String armyId);
+    @NonNull
+    ArmyResponse getArmy(@Nullable String armyId);
 }

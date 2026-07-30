@@ -8,87 +8,101 @@ import com.kala.military.application.dto.UnitResponse;
 import com.kala.military.application.ports.in.ArmyUseCasePort;
 import com.kala.military.application.ports.out.ArmyRepositoryPort;
 import com.kala.military.domain.Army;
-import com.kala.military.domain.Unit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/** Orchestrates the army use cases on top of the domain and the repository port. */
 public final class ArmyApplicationService implements ArmyUseCasePort {
 
-    private static final Logger LOGGER = LogManager.getLogger(ArmyApplicationService.class);
+    private static final Logger logger = LoggerFactory.getLogger(ArmyApplicationService.class);
 
+    @NonNull
     private final ArmyRepositoryPort armyRepositoryPort;
 
-    public ArmyApplicationService(ArmyRepositoryPort armyRepositoryPort) {
+    public ArmyApplicationService(@NonNull ArmyRepositoryPort armyRepositoryPort) {
         this.armyRepositoryPort = armyRepositoryPort;
     }
 
-    public ArmyResponse createArmy(CreateArmyRequest request) {
-        LOGGER.info("Creating army for civilization {}", request.civilization());
-        Army army = Army.create(request.civilization());
+    @Override
+    @NonNull
+    public ArmyResponse createArmy(@NonNull CreateArmyRequest request) {
+        logger.info("Creating army for civilization {}", request.civilization());
+        var army = Army.of(request.civilization());
         armyRepositoryPort.save(army);
-        LOGGER.info("Army {} created successfully", army.getId());
+        logger.info("Army {} created successfully", army.getId());
         return toResponse(army);
     }
 
-    public ArmyResponse trainUnit(TrainUnitRequest request) {
-        LOGGER.info("Training unit {} for army {}", request.unitType(), request.armyId());
-        Army army = requireArmy(request.armyId());
+    @Override
+    @NonNull
+    public ArmyResponse trainUnit(@NonNull TrainUnitRequest request) {
+        logger.info("Training unit {} for army {}", request.unitType(), request.armyId());
+        var army = requireArmy(request.armyId());
         if (!army.hasUnitType(request.unitType())) {
-            LOGGER.warn("Training rejected because unit {} was not found in army {}", request.unitType(), request.armyId());
+            logger.warn("Training rejected because unit {} was not found in army {}", request.unitType(), request.armyId());
             throw new IllegalArgumentException("Unidad no encontrada");
         }
 
-        int trainingCost = army.getTrainingCost(request.unitType());
+        var trainingCost = army.trainingCost(request.unitType());
         if (army.getGold() < trainingCost) {
-            LOGGER.warn("Training rejected for army {} due to insufficient gold", request.armyId());
+            logger.warn("Training rejected for army {} due to insufficient gold", request.armyId());
             throw new IllegalArgumentException("Oro insuficiente");
         }
 
         army.spendGold(trainingCost);
         army.trainUnit(request.unitType());
         armyRepositoryPort.save(army);
-        LOGGER.info("Training completed for unit {} in army {}", request.unitType(), request.armyId());
+        logger.info("Training completed for unit {} in army {}", request.unitType(), request.armyId());
         return toResponse(army);
     }
 
-    public ArmyResponse transformUnit(TransformUnitRequest request) {
-        LOGGER.info("Transforming unit {} to {} for army {}", request.sourceType(), request.targetType(), request.armyId());
-        Army army = requireArmy(request.armyId());
-        int transformationCost = army.getTransformationCost(request.sourceType(), request.targetType());
+    @Override
+    @NonNull
+    public ArmyResponse transformUnit(@NonNull TransformUnitRequest request) {
+        logger.info("Transforming unit {} to {} for army {}", request.sourceType(), request.targetType(), request.armyId());
+        var army = requireArmy(request.armyId());
+        var transformationCost = army.transformationCost(request.sourceType(), request.targetType());
         if (army.getGold() < transformationCost) {
-            LOGGER.warn("Transformation rejected for army {} due to insufficient gold", request.armyId());
+            logger.warn("Transformation rejected for army {} due to insufficient gold", request.armyId());
             throw new IllegalArgumentException("Oro insuficiente");
         }
 
         army.spendGold(transformationCost);
         army.transformUnit(request.sourceType(), request.targetType());
         armyRepositoryPort.save(army);
-        LOGGER.info("Transformation completed for army {}", request.armyId());
+        logger.info("Transformation completed for army {}", request.armyId());
         return toResponse(army);
     }
 
-    public ArmyResponse getArmy(String armyId) {
-        LOGGER.info("Retrieving army {}", armyId);
+    @Override
+    @NonNull
+    public ArmyResponse getArmy(@Nullable String armyId) {
+        logger.info("Retrieving army {}", armyId);
         return toResponse(requireArmy(armyId));
     }
 
-    private Army requireArmy(String armyId) {
-        Army army = armyRepositoryPort.findById(armyId);
+    @NonNull
+    private Army requireArmy(@Nullable String armyId) {
+        var army = armyRepositoryPort.findById(armyId);
         if (army == null) {
-            LOGGER.error("Army {} was requested but was not found", armyId);
+            logger.error("Army {} was requested but was not found", armyId);
             throw new IllegalArgumentException("Ejército no encontrado");
         }
         return army;
     }
 
-    private ArmyResponse toResponse(Army army) {
+    @NonNull
+    private ArmyResponse toResponse(@NonNull Army army) {
         List<UnitResponse> unitResponses = new ArrayList<>();
-        for (Unit unit : army.getUnits()) {
+        for (var unit : army.getUnits()) {
             unitResponses.add(new UnitResponse(unit.getType(), unit.getPoints(), unit.getTrainingCount()));
         }
-        return new ArmyResponse(army.getId(), army.getCivilization(), army.getGold(), unitResponses, List.copyOf(army.getBattleHistory()));
+        return new ArmyResponse(army.getId(), army.getCivilization(), army.getGold(), unitResponses, army.getBattleHistory());
     }
 }

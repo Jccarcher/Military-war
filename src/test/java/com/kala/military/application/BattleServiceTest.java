@@ -2,74 +2,124 @@ package com.kala.military.application;
 
 import com.kala.military.application.dto.BattleRequest;
 import com.kala.military.application.services.BattleApplicationService;
-import com.kala.military.application.dto.BattleResultResponse;
-import com.kala.military.application.ports.out.ArmyRepositoryPort;
 import com.kala.military.domain.Army;
-import com.kala.military.domain.Unit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class BattleServiceTest {
+final class BattleServiceTest {
 
     private BattleApplicationService service;
-    private InMemoryArmyRepository repository;
+    private FakeArmyRepository repository;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryArmyRepository();
+        repository = new FakeArmyRepository();
         service = new BattleApplicationService(repository);
     }
 
     @Test
     void shouldDeclareVictoryWhenFirstArmyHasHigherTotalPoints() {
-        Army firstArmy = Army.create("china");
-        Army secondArmy = Army.create("english");
-        firstArmy.getUnits().get(0).train();
+        var firstArmy = Army.of("china");
+        var secondArmy = Army.of("english");
+        firstArmy.trainUnit("Piquero");
         repository.save(firstArmy);
         repository.save(secondArmy);
 
-        BattleResultResponse response = service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
+        var response = service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
 
+        assertEquals("victory", response.result());
         assertEquals(firstArmy.getId(), response.winnerId());
-        assertNotNull(response.result());
+        assertEquals(secondArmy.getId(), response.loserId());
+        assertNotNull(response.summary());
     }
 
     @Test
     void shouldReturnDrawWhenBothArmiesHaveSameTotalPoints() {
-        Army firstArmy = Army.create("china");
-        Army secondArmy = Army.create("english");
-        firstArmy.getUnits().clear();
-        secondArmy.getUnits().clear();
-        firstArmy.getUnits().add(new Unit("Piquero", 5));
-        secondArmy.getUnits().add(new Unit("Piquero", 5));
+        var firstArmy = Army.of("china");
+        var secondArmy = Army.of("english");
         repository.save(firstArmy);
         repository.save(secondArmy);
 
-        BattleResultResponse response = service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
+        var response = service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
 
         assertEquals("draw", response.result());
+        assertNull(response.winnerId());
+        assertNull(response.loserId());
     }
 
-    private static final class InMemoryArmyRepository implements ArmyRepositoryPort {
+    @Test
+    void shouldRemoveWeakestUnitFromBothArmiesOnDraw() {
+        var firstArmy = Army.of("china");
+        var secondArmy = Army.of("english");
+        repository.save(firstArmy);
+        repository.save(secondArmy);
 
-        private final Map<String, Army> armies = new HashMap<>();
+        service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
 
-        @Override
-        public Army save(Army army) {
-            armies.put(army.getId(), army);
-            return army;
-        }
+        assertEquals(2, firstArmy.getUnits().size());
+        assertEquals(2, secondArmy.getUnits().size());
+    }
 
-        @Override
-        public Army findById(String id) {
-            return armies.get(id);
-        }
+    @Test
+    void shouldDeclareDefeatWhenSecondArmyHasHigherTotalPoints() {
+        var firstArmy = Army.of("china");
+        var secondArmy = Army.of("english");
+        secondArmy.trainUnit("Caballero");
+        repository.save(firstArmy);
+        repository.save(secondArmy);
+
+        var response = service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
+
+        assertEquals("defeat", response.result());
+        assertEquals(secondArmy.getId(), response.winnerId());
+        assertEquals(firstArmy.getId(), response.loserId());
+        assertEquals(1100, secondArmy.getGold());
+        assertEquals(950, firstArmy.getGold());
+    }
+
+    @Test
+    void shouldRecordTheOutcomeInBothBattleHistories() {
+        var firstArmy = Army.of("china");
+        var secondArmy = Army.of("english");
+        repository.save(firstArmy);
+        repository.save(secondArmy);
+
+        service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
+
+        assertEquals(1, firstArmy.getBattleHistory().size());
+        assertEquals("Battle vs " + secondArmy.getId() + ": draw", firstArmy.getBattleHistory().get(0));
+        assertEquals("Battle vs " + firstArmy.getId() + ": draw", secondArmy.getBattleHistory().get(0));
+    }
+
+    @Test
+    void shouldRejectBattlesReferencingUnknownArmies() {
+        var army = Army.of("china");
+        repository.save(army);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.simulateBattle(new BattleRequest("missing-id", army.getId())));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.simulateBattle(new BattleRequest(army.getId(), "missing-id")));
+    }
+
+    @Test
+    void shouldRewardWinnerAndPenalizeLoser() {
+        var firstArmy = Army.of("china");
+        var secondArmy = Army.of("english");
+        firstArmy.trainUnit("Piquero");
+        repository.save(firstArmy);
+        repository.save(secondArmy);
+
+        service.simulateBattle(new BattleRequest(firstArmy.getId(), secondArmy.getId()));
+
+        assertEquals(1100, firstArmy.getGold());
+        assertEquals(950, secondArmy.getGold());
+        assertEquals(2, secondArmy.getUnits().size());
     }
 }

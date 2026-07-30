@@ -2,32 +2,45 @@ package com.kala.military.adapters.out.inmemory;
 
 import com.kala.military.application.ports.out.ArmyRepositoryPort;
 import com.kala.military.domain.Army;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryArmyRepository implements ArmyRepositoryPort {
+/**
+ * Outbound adapter that keeps the armies in the process memory. State is lost on restart.
+ *
+ * <p>Backed by a {@link ConcurrentHashMap} so concurrent requests cannot corrupt the map itself.
+ */
+public final class InMemoryArmyRepository implements ArmyRepositoryPort {
 
-    private static final Logger LOGGER = LogManager.getLogger(InMemoryArmyRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(InMemoryArmyRepository.class);
 
-    private final Map<String, Army> armies = new HashMap<>();
+    @NonNull
+    private final Map<String, Army> armies = new ConcurrentHashMap<>();
 
     @Override
-    public Army save(Army army) {
-        LOGGER.info("Saving army {} into memory repository", army.getId());
+    @NonNull
+    public Army save(@NonNull Army army) {
+        logger.info("Saving army {} into memory repository", army.getId());
         armies.put(army.getId(), army);
         return army;
     }
 
     @Override
-    public Army findById(String id) {
-        Army army = armies.get(id);
+    @Nullable
+    public Army findById(@Nullable String id) {
+        if (id == null) return null;
+
+        var army = armies.get(id);
         if (army == null) {
-            LOGGER.warn("Army {} not found in memory repository", id);
+            logger.warn("Army {} not found in memory repository", id);
         } else {
-            LOGGER.info("Army {} retrieved from memory repository", id);
+            logger.info("Army {} retrieved from memory repository", id);
         }
         return army;
     }

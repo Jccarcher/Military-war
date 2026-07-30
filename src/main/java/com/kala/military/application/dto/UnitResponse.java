@@ -1,4 +1,7 @@
 package com.kala.military.application.dto;
 
-public record UnitResponse(String type, int points, int trainingCount) {
+import org.jspecify.annotations.NonNull;
+
+/** State of a single unit as exposed by the API. */
+public record UnitResponse(@NonNull String type, int points, int trainingCount) {
 }
