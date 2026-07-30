@@ -1,10 +1,11 @@
-package com.kala.military.application;
+package com.kala.military.application.services;
 
 import com.kala.military.application.dto.ArmyResponse;
 import com.kala.military.application.dto.CreateArmyRequest;
 import com.kala.military.application.dto.TrainUnitRequest;
 import com.kala.military.application.dto.TransformUnitRequest;
 import com.kala.military.application.dto.UnitResponse;
+import com.kala.military.application.ports.in.ArmyUseCasePort;
 import com.kala.military.domain.Army;
 import com.kala.military.domain.Unit;
 import com.kala.military.ports.out.ArmyRepositoryPort;
@@ -12,7 +13,7 @@ import com.kala.military.ports.out.ArmyRepositoryPort;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArmyApplicationService {
+public final class ArmyApplicationService implements ArmyUseCasePort {
 
     private final ArmyRepositoryPort armyRepositoryPort;
 

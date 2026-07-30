@@ -1,6 +1,7 @@
 package com.kala.military.application;
 
 import com.kala.military.application.dto.BattleRequest;
+import com.kala.military.application.services.BattleApplicationService;
 import com.kala.military.application.dto.BattleResultResponse;
 import com.kala.military.domain.Army;
 import com.kala.military.domain.Unit;

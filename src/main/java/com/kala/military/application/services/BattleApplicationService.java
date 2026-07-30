@@ -1,11 +1,12 @@
-package com.kala.military.application;
+package com.kala.military.application.services;
 
 import com.kala.military.application.dto.BattleRequest;
 import com.kala.military.application.dto.BattleResultResponse;
+import com.kala.military.application.ports.in.BattleUseCasePort;
 import com.kala.military.domain.Army;
 import com.kala.military.ports.out.ArmyRepositoryPort;
 
-public class BattleApplicationService {
+public final class BattleApplicationService implements BattleUseCasePort {
 
     private final ArmyRepositoryPort armyRepositoryPort;
 

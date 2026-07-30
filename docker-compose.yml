@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  military-war:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: military-war
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
