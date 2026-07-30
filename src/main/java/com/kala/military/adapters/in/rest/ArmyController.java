@@ -8,6 +8,8 @@ import com.kala.military.application.dto.TrainUnitRequest;
 import com.kala.military.application.dto.TransformUnitRequest;
 import com.kala.military.application.ports.in.ArmyUseCasePort;
 import com.kala.military.application.ports.in.BattleUseCasePort;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class ArmyController {
 
+    private static final Logger LOGGER = LogManager.getLogger(ArmyController.class);
+
     private final ArmyUseCasePort armyApplicationService;
     private final BattleUseCasePort battleApplicationService;
 
@@ -31,28 +35,43 @@ public class ArmyController {
 
     @PostMapping("/armies")
     public ResponseEntity<ArmyResponse> createArmy(@RequestBody CreateArmyRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(armyApplicationService.createArmy(request));
+        LOGGER.info("Creating army for civilization: {}", request.civilization());
+        ArmyResponse response = armyApplicationService.createArmy(request);
+        LOGGER.info("Army created with id: {}", response.id());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/armies/{id}")
     public ResponseEntity<ArmyResponse> getArmy(@PathVariable("id") String id) {
-        return ResponseEntity.ok(armyApplicationService.getArmy(id));
+        LOGGER.info("Retrieving army with id: {}", id);
+        ArmyResponse response = armyApplicationService.getArmy(id);
+        LOGGER.info("Army retrieved with id: {}", response.id());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/armies/{id}/train")
     public ResponseEntity<ArmyResponse> trainUnit(@PathVariable("id") String id, @RequestBody TrainUnitRequest request) {
+        LOGGER.info("Training unit {} for army {}", request.unitType(), id);
         TrainUnitRequest mergedRequest = new TrainUnitRequest(id, request.unitType());
-        return ResponseEntity.ok(armyApplicationService.trainUnit(mergedRequest));
+        ArmyResponse response = armyApplicationService.trainUnit(mergedRequest);
+        LOGGER.info("Training completed for army {}", response.id());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/armies/{id}/transform")
     public ResponseEntity<ArmyResponse> transformUnit(@PathVariable("id") String id, @RequestBody TransformUnitRequest request) {
+        LOGGER.info("Transforming unit from {} to {} for army {}", request.sourceType(), request.targetType(), id);
         TransformUnitRequest mergedRequest = new TransformUnitRequest(id, request.sourceType(), request.targetType());
-        return ResponseEntity.ok(armyApplicationService.transformUnit(mergedRequest));
+        ArmyResponse response = armyApplicationService.transformUnit(mergedRequest);
+        LOGGER.info("Transformation completed for army {}", response.id());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/battle")
     public ResponseEntity<BattleResultResponse> simulateBattle(@RequestBody BattleRequest request) {
-        return ResponseEntity.ok(battleApplicationService.simulateBattle(request));
+        LOGGER.info("Simulating battle between armies {} and {}", request.firstArmyId(), request.secondArmyId());
+        BattleResultResponse response = battleApplicationService.simulateBattle(request);
+        LOGGER.info("Battle simulation completed with result: {}", response.result());
+        return ResponseEntity.ok(response);
     }
 }

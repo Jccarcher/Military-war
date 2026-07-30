@@ -1,5 +1,8 @@
 package com.kala.military.domain;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -7,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class Army {
+    private static final Logger LOGGER = LogManager.getLogger(Army.class);
+
     private static final int INITIAL_GOLD = 1000;
     private static final Map<String, Integer> TRAINING_COSTS = Map.of(
             "Piquero", 30,
@@ -52,16 +57,20 @@ public final class Army {
 
     public void spendGold(int amount) {
         if (amount < 0) {
+            LOGGER.warn("Negative gold spend attempted for army {}", id);
             throw new IllegalArgumentException("El gasto no puede ser negativo");
         }
         this.gold = Math.max(this.gold - amount, 0);
+        LOGGER.info("Army {} spent {} gold. Remaining gold: {}", id, amount, this.gold);
     }
 
     public void earnGold(int amount) {
         if (amount < 0) {
+            LOGGER.warn("Negative gold gain attempted for army {}", id);
             throw new IllegalArgumentException("La ganancia no puede ser negativa");
         }
         this.gold += amount;
+        LOGGER.info("Army {} earned {} gold. Total gold: {}", id, amount, this.gold);
     }
 
     public List<Unit> getUnits() {
@@ -74,6 +83,7 @@ public final class Army {
 
     public void addBattleResult(String result) {
         battleHistory.add(result);
+        LOGGER.info("Battle result recorded for army {}: {}", id, result);
     }
 
     public int getTrainingCost(String unitType) {
@@ -90,13 +100,16 @@ public final class Army {
     public void trainUnit(String unitType) {
         Unit unit = findUnitByType(unitType);
         if (unit == null) {
+            LOGGER.warn("Training failed for army {} because unit {} was not found", id, unitType);
             throw new IllegalArgumentException("Unidad no encontrada");
         }
         unit.train();
+        LOGGER.info("Army {} trained unit {}", id, unitType);
     }
 
     public void transformUnit(String sourceType, String targetType) {
         if (!canTransform(sourceType, targetType)) {
+            LOGGER.warn("Transformation rule unsupported for army {}: {} -> {}", id, sourceType, targetType);
             throw new IllegalArgumentException("Regla de transformación no soportada");
         }
 
@@ -108,6 +121,7 @@ public final class Army {
         Unit existingUnit = units.get(index);
         int targetPoints = Math.max(BASE_POINTS.getOrDefault(targetType, existingUnit.getPoints()), existingUnit.getPoints());
         units.set(index, new Unit(targetType, targetPoints));
+        LOGGER.info("Army {} transformed unit {} to {}", id, sourceType, targetType);
     }
 
     public int calculateTotalPoints() {
@@ -120,6 +134,7 @@ public final class Army {
 
     public void removeWeakestUnit() {
         if (units.isEmpty()) {
+            LOGGER.info("Army {} has no units to remove", id);
             return;
         }
 
@@ -133,6 +148,7 @@ public final class Army {
             }
         }
         units.remove(weakestIndex);
+        LOGGER.info("Army {} removed weakest unit", id);
     }
 
     private Unit findUnitByType(String unitType) {

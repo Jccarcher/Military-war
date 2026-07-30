@@ -5,8 +5,9 @@ import com.kala.military.application.services.ArmyApplicationService;
 import com.kala.military.application.dto.CreateArmyRequest;
 import com.kala.military.application.dto.TrainUnitRequest;
 import com.kala.military.application.dto.TransformUnitRequest;
+import com.kala.military.application.ports.out.ArmyRepositoryPort;
 import com.kala.military.domain.Army;
-import com.kala.military.ports.out.ArmyRepositoryPort;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

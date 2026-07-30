@@ -3,9 +3,10 @@ package com.kala.military.application;
 import com.kala.military.application.dto.BattleRequest;
 import com.kala.military.application.services.BattleApplicationService;
 import com.kala.military.application.dto.BattleResultResponse;
+import com.kala.military.application.ports.out.ArmyRepositoryPort;
 import com.kala.military.domain.Army;
 import com.kala.military.domain.Unit;
-import com.kala.military.ports.out.ArmyRepositoryPort;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

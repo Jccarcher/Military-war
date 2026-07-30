@@ -1,4 +1,4 @@
-package com.kala.military.ports.out;
+package com.kala.military.application.ports.out;
 
 import com.kala.military.domain.Army;
 
