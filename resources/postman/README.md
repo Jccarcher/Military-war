@@ -1,6 +1,6 @@
 # Colección de Postman — Military War Simulation API
 
-Colección lista para importar con las 21 peticiones de la API, agrupadas por caso de uso.
+Colección lista para importar con las 25 peticiones de la API, agrupadas por caso de uso.
 
 | Archivo | Qué es |
 | :------ | :----- |
@@ -43,7 +43,8 @@ de principio a fin, incluidos los casos de error.
 | 3. Transformación | Ciclo Piquero → Arquero → Caballero → Piquero |
 | 4. Batalla | Simular batalla y consultar el historial resultante |
 | 5. Casos de error (400) | Civilización no soportada o ausente, tipo de unidad ausente o inexistente, transformación no soportada, ejército no encontrado y JSON malformado |
-| 6. Documentación | OpenAPI JSON y Swagger UI |
+| 6. Health Checks | Probes de liveness y readiness, health agregado y verificación de que el resto de Actuator sigue cerrado |
+| 7. Documentación | OpenAPI JSON y Swagger UI |
 
 Cada petición trae pruebas (`pm.test`) que verifican el código de estado y el contrato de la
 respuesta, así que el Runner sirve como humo de la API además de como cliente manual.

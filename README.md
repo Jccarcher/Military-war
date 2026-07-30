@@ -30,6 +30,7 @@ El sistema funciona sin base de datos y guarda los estados de los ejércitos en 
 | Framework         | Spring Boot 4.1.0            | Desarrollo de la API REST              |
 | Arquitectura      | Hexagonal (Ports & Adapters) | Separación entre dominio y adaptadores |
 | Validación        | Jakarta Bean Validation      | Validación de los DTO de entrada       |
+| Observabilidad    | Spring Boot Actuator         | Probes de liveness y readiness         |
 | Nulabilidad       | JSpecify                     | Contratos `@Nullable` / `@NonNull`     |
 | Logging           | SLF4J sobre Log4j2           | Trazas de aplicación y dominio         |
 | Testing           | JUnit 5 / Mockito / MockMvc  | Pruebas unitarias, de slice web y de integración |
@@ -135,10 +136,9 @@ En todos los casos el resultado queda registrado en el `battleHistory` de ambos 
 
 ## ⚙️ Requisitos Previos
 
-- Java 21
+- Java 21 (solo para ejecutar sin Docker)
 - Maven 3.9+ (opcional: el repositorio incluye `mvnw` / `mvnw.cmd`)
-- Docker Desktop o Docker Engine (solo para el despliegue con contenedores)
-- Docker Compose
+- Docker Desktop o Docker Engine con Docker Compose (alternativa: no requiere Java ni Maven en la máquina)
 
 ## ▶️ Ejecutar Localmente sin Docker
 
@@ -171,13 +171,20 @@ mvnw.cmd spring-boot:run   # Windows
 
 ## 🐳 Despliegue Local con Docker
 
-> El `Dockerfile` copia el JAR ya construido desde `target/`, por lo que **es obligatorio empaquetar antes** de construir la imagen.
+> El `Dockerfile` es multi-etapa: compila el JAR **dentro del contenedor** con el Maven Wrapper y solo
+> copia el artefacto a una imagen JRE. No hace falta ejecutar Maven antes ni tener Java instalado.
 
 ### Construir y levantar el contenedor
 
 ```bash
-mvn clean package -DskipTests
 docker compose up --build
+```
+
+Para dejarlo en segundo plano y seguir los logs:
+
+```bash
+docker compose up -d --build
+docker compose logs -f
 ```
 
 ### Detener el contenedor
@@ -195,6 +202,10 @@ curl -X POST http://localhost:8080/api/v1/armies \
 ```
 
 > El contenedor expone el puerto 8080 y activa el perfil `docker` mediante la variable `SPRING_PROFILES_ACTIVE` definida en `docker-compose.yml`.
+
+La primera construcción descarga las dependencias de Maven (~1-2 min). Las siguientes son mucho más
+rápidas: el `pom.xml` se copia antes que `src/`, y el repositorio `~/.m2` se monta como caché de
+BuildKit, de modo que cambiar código no vuelve a descargar dependencias.
 
 ## 🌐 Endpoints de la API
 
@@ -407,7 +418,7 @@ En [resources/postman/](resources/postman/) está la colección completa lista p
 
 | Archivo | Contenido |
 | :------ | :-------- |
-| `military-war.postman_collection.json` | 21 peticiones agrupadas por caso de uso, con pruebas `pm.test` |
+| `military-war.postman_collection.json` | 25 peticiones agrupadas por caso de uso, con pruebas `pm.test` |
 | `military-war-local.postman_environment.json` | Variables `host`, `baseUrl`, `armyId`, `rivalArmyId` |
 
 En Postman: **Import → Files** y selecciona ambos archivos. Ejecuta primero *Crear ejército (chinos)*
@@ -417,6 +428,52 @@ o desde consola con Newman.
 
 Las carpetas cubren ejércitos, entrenamiento, transformación, batalla, los siete casos de error `400`
 y los recursos de OpenAPI. Ver [resources/postman/README.md](resources/postman/README.md) para el detalle.
+
+## ❤️ Health Checks (Spring Boot Actuator)
+
+La aplicación expone las dos probes estándar que usan Kubernetes, Docker o cualquier balanceador
+para saber si la instancia sigue viva y si puede recibir tráfico:
+
+| Probe | Endpoint | Responde | Qué significa |
+| :---- | :------- | :------- | :------------ |
+| Liveness | `GET /actuator/health/liveness` | `200` UP / `503` DOWN | El proceso está vivo. Si falla, la instancia debe **reiniciarse** |
+| Readiness | `GET /actuator/health/readiness` | `200` UP / `503` DOWN | Puede atender peticiones. Si falla, se la **saca del balanceador** sin reiniciarla |
+
+También queda disponible el health agregado, que incluye ambos estados más disco, ping y SSL:
+
+```bash
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/actuator/health/liveness
+curl http://localhost:8080/actuator/health/readiness
+```
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "livenessState": { "status": "UP" }
+  }
+}
+```
+
+Los endpoints de Actuator viven bajo `/actuator`, **no** bajo `/api/v1`. Solo se expone `health`:
+cualquier otro (`/actuator/env`, `/actuator/beans`, …) responde `404` por configuración en
+[application.properties](src/main/resources/application.properties).
+
+> `management.endpoint.health.show-details=always` muestra el detalle de cada componente sin
+> autenticación, lo cual es cómodo en local. Si el servicio se publica en una red no confiable,
+> cámbialo a `when-authorized` y añade Spring Security.
+
+### Ejemplo para Kubernetes
+
+```yaml
+livenessProbe:
+  httpGet: { path: /actuator/health/liveness, port: 8080 }
+  initialDelaySeconds: 10
+readinessProbe:
+  httpGet: { path: /actuator/health/readiness, port: 8080 }
+  initialDelaySeconds: 5
+```
 
 ## 🧪 Pruebas
 

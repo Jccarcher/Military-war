@@ -974,7 +974,155 @@
       ]
     },
     {
-      "name": "6. Documentación",
+      "name": "6. Health Checks",
+      "description": "Probes de Spring Boot Actuator. Cuelgan de /actuator, no de /api/v1.",
+      "item": [
+        {
+          "name": "Liveness probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('El proceso está vivo', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/actuator/health/liveness",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "actuator",
+                "health",
+                "liveness"
+              ]
+            },
+            "description": "Indica si el proceso sigue vivo. Un 503 aquí significa que la instancia debe reiniciarse."
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness probe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Puede atender peticiones', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/actuator/health/readiness",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "actuator",
+                "health",
+                "readiness"
+              ]
+            },
+            "description": "Indica si la instancia puede recibir tráfico. Un 503 aquí la saca del balanceador sin reiniciarla."
+          },
+          "response": []
+        },
+        {
+          "name": "Health agregado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Incluye los grupos liveness y readiness', function () {",
+                  "    pm.expect(pm.response.json().groups).to.include.members(['liveness', 'readiness']);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/actuator/health",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "Estado global: incluye livenessState, readinessState, disco, ping y SSL."
+          },
+          "response": []
+        },
+        {
+          "name": "Endpoint no expuesto (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404: solo health está expuesto', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{host}}/actuator/env",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "actuator",
+                "env"
+              ]
+            },
+            "description": "Comprueba que el resto de endpoints de Actuator siguen cerrados."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Documentación",
       "description": "Recursos de OpenAPI expuestos por springdoc. No cuelgan de /api/v1.",
       "item": [
         {

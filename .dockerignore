@@ -1,0 +1,22 @@
+# Artefactos de build: la imagen los genera dentro del contenedor
+target/
+!.mvn/wrapper/maven-wrapper.properties
+
+# Control de versiones y metadatos
+.git/
+.gitignore
+.gitattributes
+
+# Configuración de IDE y de agentes
+.vscode/
+.idea/
+.claude/
+.github/
+*.iml
+
+# Documentación y recursos que no intervienen en el build
+docs/
+resources/
+README.md
+CLAUDE.md
+mvnw.cmd
