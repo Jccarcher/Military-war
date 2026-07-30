@@ -471,7 +471,6 @@ conserva como red de seguridad si en el futuro se añade una civilización a un 
 - `Army` expone sus unidades e historial como listas inmutables: su composición solo cambia a través de sus propias operaciones.
 - Los errores de negocio y de validación se traducen a respuestas HTTP 400 mediante un manejador global.
 - El proyecto está preparado para evolucionar hacia persistencia real o integración con otros servicios sustituyendo el adaptador de salida.
-- Las convenciones y las excepciones arquitectónicas para agentes de IA están en [CLAUDE.md](CLAUDE.md).
 
 ## 📚 Documentación Adicional
 
